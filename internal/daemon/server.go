@@ -17,6 +17,7 @@ import (
 	"github.com/fisherevans/meatbag/internal/store"
 	"github.com/fisherevans/meatbag/internal/tree"
 	"github.com/fisherevans/meatbag/internal/ui"
+	"github.com/fisherevans/meatbag/internal/version"
 )
 
 // Server holds the daemon's runtime dependencies.
@@ -45,7 +46,7 @@ func New(s *store.Store) (*Server, error) {
 		Broker:    newBroker(),
 		UIFS:      ui.FS(),
 		StartedAt: time.Now().UTC(),
-		Version:   "0.1.0",
+		Version:   version.Version,
 		stopping:  make(chan struct{}),
 	}, nil
 }

@@ -2,6 +2,8 @@ package cli
 
 import (
 	"github.com/spf13/cobra"
+
+	"github.com/fisherevans/meatbag/internal/version"
 )
 
 // globalFlags carries top-level options accessible to every subcommand.
@@ -21,6 +23,7 @@ func newRoot() *cobra.Command {
 			"and update lists via this CLI; humans work through them in a web " +
 			"daemon at http://127.0.0.1:7421. Run `meatbag agent help` for the " +
 			"agent-facing usage guide.",
+		Version:      version.String(),
 		SilenceUsage: true,
 	}
 	cmd.PersistentFlags().BoolVar(&gFlags.JSON, "json", false, "emit machine-readable JSON output")
@@ -38,6 +41,7 @@ func newRoot() *cobra.Command {
 		newGCCmd(),
 		newAgentCmd(),
 		newInstallCmd(),
+		newVersionCmd(),
 	)
 	return cmd
 }
