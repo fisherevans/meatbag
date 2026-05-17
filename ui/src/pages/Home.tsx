@@ -8,6 +8,10 @@ export function Home() {
   const [rows, setRows] = useState<ListRow[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
+  useEffect(() => {
+    document.title = "Meatbag";
+  }, []);
+
   const refresh = useCallback(async () => {
     try {
       const r = await api.listLists();
