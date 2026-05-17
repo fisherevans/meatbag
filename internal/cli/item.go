@@ -346,7 +346,13 @@ func itemDeleteCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "delete <list> <item>",
 		Short: "Delete an item (recursive); purges its secrets and blobs",
-		Args:  cobra.ExactArgs(2),
+		Long: "Delete an item and its entire subtree. This is irreversible: the " +
+			"item, all descendant items, and every input value attached to " +
+			"any of them are removed. Every referenced Keychain entry " +
+			"(service=meatbag) is deleted and every content-addressed blob " +
+			"in ~/.meatbag/blobs/ referenced by the subtree is purged. " +
+			"Requires --yes.",
+		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if !yes {
 				return fmt.Errorf("refusing to delete without --yes")

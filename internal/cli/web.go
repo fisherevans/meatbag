@@ -53,7 +53,7 @@ func webStartCmd() *cobra.Command {
 				fmt.Sprintf("daemon started (pid=%d port=%d) -> %s", st.PID, st.Port, url))
 		},
 	}
-	cmd.Flags().IntVar(&port, "port", 7421, "TCP port (default 7421)")
+	cmd.Flags().IntVar(&port, "port", 7421, "TCP port to listen on")
 	cmd.Flags().BoolVar(&foreground, "foreground", false, "run in the current shell (no detach)")
 	return cmd
 }
@@ -158,6 +158,6 @@ func webRestartCmd() *cobra.Command {
 				fmt.Sprintf("restarted (pid=%d port=%d)", st.PID, st.Port))
 		},
 	}
-	cmd.Flags().IntVar(&port, "port", 7421, "TCP port")
+	cmd.Flags().IntVar(&port, "port", 7421, "TCP port to listen on")
 	return cmd
 }

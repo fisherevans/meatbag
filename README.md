@@ -46,6 +46,12 @@ Ensure the install directory is on `$PATH`. For the default location:
 export PATH="$HOME/.local/bin:$PATH"   # add to ~/.zshrc or ~/.bashrc
 ```
 
+Once the binary is on `$PATH`, subsequent upgrades can skip the clone/make
+loop and use `meatbag install` directly - it's the same atomic-swap path that
+`make install` wraps. Pass `--target <path>` to install somewhere other than
+the default `$HOME/.local/bin/meatbag`, and `--no-restart` to skip the
+daemon respawn when you'd rather restart it yourself.
+
 ## Build
 
 ```
