@@ -358,7 +358,10 @@ header.top {
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  overflow: hidden;
+  /* overflow:visible so the long-press state picker (an absolutely-positioned
+     popover anchored to the status icon) isn't clipped by the card edge. The
+     body rounds its own bottom corners below so the card still looks clean. */
+  overflow: visible;
   transition: border-color 120ms ease, box-shadow 120ms ease;
   /* Clear the sticky top header (~56px) plus visual breathing room when the
      browser scrolls an item into view via #fragment or sidebar jump. */
@@ -372,14 +375,16 @@ header.top {
   animation: item-double-pulse 2.4s ease-in-out;
 }
 /* Double pulse: ramp up, settle, ramp up again, settle. Starts low so the
-   highlight grows in as the smooth scroll completes rather than slamming on. */
+   highlight grows in as the smooth scroll completes rather than slamming on.
+   The background-color tint sweeps across the whole card in sync with the
+   edge glow so the entire surface lights up rather than just the border. */
 @keyframes item-double-pulse {
-  0%   { box-shadow: 0 0 0 0 rgba(106, 167, 255, 0); border-color: var(--border); }
-  15%  { box-shadow: 0 0 0 5px rgba(106, 167, 255, 0.45); border-color: var(--accent); }
-  35%  { box-shadow: 0 0 0 1px rgba(106, 167, 255, 0.1); border-color: var(--border); }
-  55%  { box-shadow: 0 0 0 5px rgba(106, 167, 255, 0.55); border-color: var(--accent); }
-  80%  { box-shadow: 0 0 0 2px rgba(106, 167, 255, 0.18); border-color: var(--border); }
-  100% { box-shadow: 0 0 0 0 rgba(106, 167, 255, 0); border-color: var(--border); }
+  0%   { box-shadow: 0 0 0 0 rgba(106, 167, 255, 0); border-color: var(--border); background-color: rgba(106, 167, 255, 0); }
+  15%  { box-shadow: 0 0 0 5px rgba(106, 167, 255, 0.45); border-color: var(--accent); background-color: rgba(106, 167, 255, 0.09); }
+  35%  { box-shadow: 0 0 0 1px rgba(106, 167, 255, 0.1); border-color: var(--border); background-color: rgba(106, 167, 255, 0.03); }
+  55%  { box-shadow: 0 0 0 5px rgba(106, 167, 255, 0.55); border-color: var(--accent); background-color: rgba(106, 167, 255, 0.1); }
+  80%  { box-shadow: 0 0 0 2px rgba(106, 167, 255, 0.18); border-color: var(--border); background-color: rgba(106, 167, 255, 0.04); }
+  100% { box-shadow: 0 0 0 0 rgba(106, 167, 255, 0); border-color: var(--border); background-color: rgba(106, 167, 255, 0); }
 }
 .item.state-todo         { border-left: 4px solid var(--c-todo); }
 .item.state-in_progress  { border-left: 4px solid var(--c-in_progress); }
@@ -389,10 +394,27 @@ header.top {
 
 .item-header {
   display: grid;
-  grid-template-columns: 44px 1fr auto;
-  gap: 14px;
-  padding: 14px 16px 14px 14px;
+  grid-template-columns: 24px 44px 1fr auto;
+  gap: 10px;
+  padding: 14px 16px 14px 10px;
   align-items: start;
+}
+
+/* Reserve a stable slot for the collapse chevron so items without a body still
+   line up with items that have one. */
+.item-collapse-slot {
+  width: 24px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.state-toggle-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .state-toggle {
@@ -404,6 +426,10 @@ header.top {
   align-items: center;
   justify-content: center;
   transition: background 120ms ease;
+  /* Long-press on touch shouldn't pop the OS callout/select. */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 .state-toggle:hover { background: var(--panel-2); }
 .state-toggle .state-icon-todo         { color: var(--c-todo); }
@@ -411,6 +437,45 @@ header.top {
 .state-toggle .state-icon-blocked      { color: var(--c-blocked); }
 .state-toggle .state-icon-done         { color: var(--c-done); }
 .state-toggle .state-icon-skipped      { color: var(--c-skipped); }
+
+/* ============================================================
+   State picker popover (long-press on status icon)
+   ============================================================ */
+.state-picker {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 180px;
+  background: var(--panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  padding: 4px;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.state-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  padding: 8px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 13px;
+}
+.state-picker-item:hover { background: var(--panel-2); }
+.state-picker-item.current {
+  background: var(--accent-dim);
+  color: var(--text-strong);
+}
+.state-picker-label { text-transform: capitalize; }
 
 .item-meta { min-width: 0; }
 .item-meta-row {
@@ -543,6 +608,11 @@ header.top {
 .item-body {
   border-top: 1px solid var(--border);
   background: var(--bg-2);
+  /* Round the bottom corners to match the parent card now that .item is
+     overflow:visible (otherwise the body background would square off the
+     card's rounded bottom). */
+  border-bottom-left-radius: calc(var(--radius) - 1px);
+  border-bottom-right-radius: calc(var(--radius) - 1px);
   padding: 14px 16px 16px 62px;
   display: flex;
   flex-direction: column;
