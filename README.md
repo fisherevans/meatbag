@@ -26,6 +26,26 @@ make build
 ./bin/meatbag url set-up-new-laptop
 ```
 
+## Install
+
+```
+make install     # builds, then installs to ~/.local/bin/meatbag
+```
+
+`make install` builds a fresh binary, stops the running daemon (if any),
+atomically swaps the on-PATH binary, and restarts the daemon so the new
+version is live. Pass `INSTALL_ARGS` to install somewhere else:
+
+```
+make install INSTALL_ARGS="--target=/usr/local/bin"
+```
+
+Ensure the install directory is on `$PATH`. For the default location:
+
+```
+export PATH="$HOME/.local/bin:$PATH"   # add to ~/.zshrc or ~/.bashrc
+```
+
 ## Build
 
 ```

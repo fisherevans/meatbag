@@ -1,4 +1,4 @@
-.PHONY: build ui go test clean dev sync-guide
+.PHONY: build ui go test clean dev sync-guide install
 
 BIN := bin/meatbag
 
@@ -27,3 +27,10 @@ dev:
 
 clean:
 	rm -rf bin internal/ui/dist ui/dist ui/node_modules
+
+# install: build a fresh binary then run its own `install` subcommand to
+# atomically swap the on-PATH copy (default ~/.local/bin/meatbag). Override the
+# destination by passing INSTALL_ARGS, e.g.:
+#   make install INSTALL_ARGS="--target=/usr/local/bin"
+install: build
+	./$(BIN) install $(INSTALL_ARGS)
