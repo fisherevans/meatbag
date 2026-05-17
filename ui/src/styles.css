@@ -582,14 +582,73 @@ header.top {
 }
 .btn-ghost:hover:not(:disabled) { background: var(--panel-2); color: var(--text); }
 
-.state-select {
+/* ============================================================
+   State select (always-visible status dropdown in item actions)
+   ============================================================ */
+.state-select-wrap { position: relative; display: inline-block; }
+
+.state-select-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   background: var(--panel-2);
   border: 1px solid var(--border);
   color: var(--text);
   border-radius: var(--radius-sm);
-  padding: 6px 8px;
+  padding: 6px 10px;
   font-size: 12px;
+  font-weight: 500;
+  min-width: 140px;
+  text-transform: capitalize;
+  transition: background 120ms ease, border-color 120ms ease;
 }
+.state-select-trigger:hover:not(:disabled) {
+  background: var(--panel-3);
+  border-color: var(--border-strong);
+}
+.state-select-trigger:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+/* Tint each state's icon inside the trigger via the standard state-icon-* rules. */
+.state-select-label { flex: 1; text-align: left; }
+.state-select-trigger > svg:last-child { color: var(--muted); }
+
+.state-select-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 180px;
+  background: var(--panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  padding: 4px;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.state-select-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  padding: 8px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 13px;
+}
+.state-select-item:hover { background: var(--panel-2); }
+.state-select-item.current {
+  background: var(--accent-dim);
+  color: var(--text-strong);
+}
+.state-select-item-label { text-transform: capitalize; }
 
 .collapse-btn {
   background: transparent;
@@ -741,6 +800,7 @@ textarea.text-input { resize: vertical; min-height: 90px; }
   gap: 4px;
 }
 .option-row {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -757,16 +817,84 @@ textarea.text-input { resize: vertical; min-height: 90px; }
   background: var(--accent-dim);
   color: var(--text-strong);
 }
-.option-row input { accent-color: var(--accent); }
-
 .toggle {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 8px;
   cursor: pointer;
   user-select: none;
 }
-.toggle input { accent-color: var(--accent); transform: scale(1.2); }
+
+/* ============================================================
+   Custom-styled radio / checkbox indicators
+   The native input is visually hidden but kept in-flow for
+   accessibility (focus, form semantics). The styled .ctrl-radio /
+   .ctrl-box sibling renders the visual based on :checked state.
+   ============================================================ */
+.ctrl-native {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ctrl-radio,
+.ctrl-box {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  background: var(--bg);
+  border: 1.5px solid var(--border-strong);
+  position: relative;
+  transition: border-color 100ms ease, background 100ms ease;
+}
+.ctrl-radio { border-radius: 50%; }
+.ctrl-box { border-radius: 4px; }
+
+/* checked visuals */
+.ctrl-native:checked ~ .ctrl-radio {
+  border-color: var(--accent);
+}
+.ctrl-native:checked ~ .ctrl-radio::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.ctrl-native:checked ~ .ctrl-box {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.ctrl-native:checked ~ .ctrl-box::after {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 1px;
+  width: 5px;
+  height: 10px;
+  border: solid var(--text-strong);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* keyboard focus ring */
+.ctrl-native:focus-visible ~ .ctrl-radio,
+.ctrl-native:focus-visible ~ .ctrl-box {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* disabled */
+.ctrl-native:disabled ~ .ctrl-radio,
+.ctrl-native:disabled ~ .ctrl-box {
+  opacity: 0.55;
+}
 
 .file-row .file-btn { display: inline-flex; align-items: center; gap: 6px; }
 .file-meta { font-size: 12px; color: var(--muted); font-family: ui-monospace, monospace; }

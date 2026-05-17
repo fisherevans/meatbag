@@ -3,8 +3,8 @@ import { api, Item, State } from "../lib/api";
 import { InputField } from "./InputField";
 import { StateIcon } from "./StateIcon";
 import { StatePicker } from "./StatePicker";
+import { StateSelect } from "./StateSelect";
 
-const STATES: State[] = ["todo", "in_progress", "blocked", "done", "skipped"];
 const LONG_PRESS_MS = 500;
 
 interface Props {
@@ -183,17 +183,11 @@ export function ItemNode({ slug, item, depth, onChange, registerObserver }: Prop
               Reopen
             </button>
           )}
-          <select
-            className="state-select"
-            value={item.state}
-            onChange={(e) => setExact(e.target.value as State)}
+          <StateSelect
+            current={item.state}
+            onPick={(s) => setExact(s)}
             disabled={busy}
-            aria-label="set status"
-          >
-            {STATES.map((s) => (
-              <option key={s} value={s}>{prettyState(s)}</option>
-            ))}
-          </select>
+          />
         </div>
       </header>
 

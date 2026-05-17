@@ -164,10 +164,12 @@ export function InputField({ slug, itemID, schema, value, onChange }: Props) {
               <input
                 id={id}
                 type="checkbox"
+                className="ctrl-native"
                 checked={value?.value === true}
                 onChange={(e) => save(e.target.checked)}
                 disabled={busy}
               />
+              <span className="ctrl-box" aria-hidden="true" />
               <span>{value?.value === true ? "on" : "off"}</span>
             </label>
           </div>
@@ -184,6 +186,7 @@ export function InputField({ slug, itemID, schema, value, onChange }: Props) {
                 <label className={`option-row ${current === o ? "selected" : ""}`}>
                   <input
                     type="radio"
+                    className="ctrl-native"
                     name={`${fieldID}-radio`}
                     checked={current === o}
                     onChange={() => {
@@ -192,6 +195,7 @@ export function InputField({ slug, itemID, schema, value, onChange }: Props) {
                     }}
                     disabled={busy}
                   />
+                  <span className="ctrl-radio" aria-hidden="true" />
                   <span>{o}</span>
                 </label>
               </li>
@@ -221,10 +225,12 @@ export function InputField({ slug, itemID, schema, value, onChange }: Props) {
                 <label className={`option-row ${current.includes(o) ? "selected" : ""}`}>
                   <input
                     type="checkbox"
+                    className="ctrl-native"
                     checked={current.includes(o)}
                     onChange={() => toggle(o)}
                     disabled={busy}
                   />
+                  <span className="ctrl-box" aria-hidden="true" />
                   <span>{o}</span>
                 </label>
               </li>
