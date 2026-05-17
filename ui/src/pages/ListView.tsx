@@ -173,7 +173,7 @@ export function ListView() {
     <div className="page list-page">
       <header className="top">
         <Link to="/" className="brand" aria-label="home">
-          <BrandMark size={22} />
+          <BrandMark />
           <span className="brand-text">meatbag</span>
         </Link>
         <span className="top-divider" aria-hidden />
