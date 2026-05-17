@@ -44,8 +44,12 @@ func newWaitCmd() *cobra.Command {
 		Use:   "wait <list> <item>",
 		Short: "Block until an item reaches a state or has inputs filled",
 		Long: "Block until the named item satisfies the given conditions, then " +
-			"exit 0. Exit 124 on timeout, 2 if the item or list disappears. " +
-			"Wakeups are fsnotify-driven, not polled.\n\n" +
+			"exit 0. Wakeups are fsnotify-driven, not polled.\n\n" +
+			"Exit codes:\n" +
+			"  0    conditions satisfied\n" +
+			"  124  timeout\n" +
+			"  2    item or list disappeared while waiting\n" +
+			"  130  interrupted (SIGINT)\n\n" +
 			"Examples:\n" +
 			"  meatbag wait my-list 2 --state=done\n" +
 			"  meatbag wait my-list 2 --input=api_key --timeout=30m\n" +
