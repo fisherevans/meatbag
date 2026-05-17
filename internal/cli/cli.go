@@ -36,6 +36,7 @@ func newRoot() *cobra.Command {
 		newWebCmd(),
 		newGCCmd(),
 		newAgentCmd(),
+		newInstallCmd(),
 	)
 	return cmd
 }
