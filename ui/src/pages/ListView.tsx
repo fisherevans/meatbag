@@ -80,19 +80,41 @@ export function ListView() {
     )
   );
 
-  // Scroll to the URL fragment item once the data is loaded.
+  // Scroll to the URL fragment item once per fragment change. We track the
+  // last-handled hash via a ref so that subsequent list refetches (e.g. from
+  // SSE-driven updates) don't re-scroll back to the fragment target.
+  const handledHashRef = useRef<string | null>(null);
   useEffect(() => {
     if (!list) return;
     const hash = window.location.hash.slice(1);
     if (!hash) return;
+    if (handledHashRef.current === hash) return;
     const el = document.getElementById(hash);
     if (el) {
+      handledHashRef.current = hash;
       el.scrollIntoView({ behavior: "smooth", block: "start" });
       el.classList.add("highlight");
       const t = setTimeout(() => el.classList.remove("highlight"), 2400);
       return () => clearTimeout(t);
     }
   }, [list]);
+
+  // Re-run the fragment scroll when the URL hash changes (e.g. sidebar click
+  // calls history.replaceState, or user navigates via a fragment link).
+  useEffect(() => {
+    const onHashChange = () => {
+      const hash = window.location.hash.slice(1);
+      if (!hash) return;
+      const el = document.getElementById(hash);
+      if (!el) return;
+      handledHashRef.current = hash;
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      el.classList.add("highlight");
+      setTimeout(() => el.classList.remove("highlight"), 2400);
+    };
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
 
   return (
     <div className="page list-page">
