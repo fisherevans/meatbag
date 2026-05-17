@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
@@ -85,13 +86,16 @@ func itemAddCmd() *cobra.Command {
 					}
 				}
 			}
+			now := time.Now().UTC()
 			it := &store.Item{
-				ID:      store.NewItemID(),
-				Title:   title,
-				Owner:   ownerVal,
-				State:   store.StateTodo,
-				Content: body,
-				Inputs:  inputs,
+				ID:        store.NewItemID(),
+				Title:     title,
+				Owner:     ownerVal,
+				State:     store.StateTodo,
+				Content:   body,
+				Inputs:    inputs,
+				CreatedAt: now,
+				UpdatedAt: now,
 			}
 			err = s.Update(args[0], func(l *store.List) error {
 				parentID, err := resolveItemRef(l, parent)
@@ -244,6 +248,7 @@ func itemUpdateCmd() *cobra.Command {
 					}
 					it.Inputs = inputs
 				}
+				it.UpdatedAt = time.Now().UTC()
 				return nil
 			})
 			if err != nil {
@@ -287,11 +292,17 @@ func itemMoveCmd() *cobra.Command {
 				if err != nil {
 					return err
 				}
-				return tree.Move(l, itemID, tree.MoveOptions{
+				if err := tree.Move(l, itemID, tree.MoveOptions{
 					ParentID: parentID,
 					AfterID:  afterID,
 					BeforeID: beforeID,
-				})
+				}); err != nil {
+					return err
+				}
+				if it, ok := tree.Resolve(l, itemID); ok {
+					it.UpdatedAt = time.Now().UTC()
+				}
+				return nil
 			})
 			if err != nil {
 				return fail("move", err)
@@ -329,6 +340,7 @@ func itemStateCmd() *cobra.Command {
 				if cmd.Flags().Changed("note") {
 					it.Note = note
 				}
+				it.UpdatedAt = time.Now().UTC()
 				return nil
 			})
 			if err != nil {
