@@ -68,6 +68,11 @@ export function ListView() {
     refresh();
   }, [refresh]);
 
+  useEffect(() => {
+    const name = list?.title ?? slug;
+    document.title = name ? `${name} - Meatbag` : "Meatbag";
+  }, [list, slug]);
+
   useSSE(
     useCallback(
       (ev) => {
