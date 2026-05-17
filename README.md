@@ -53,3 +53,32 @@ make build       # builds UI + binary -> bin/meatbag
 make ui          # ui only
 make test        # go test ./...
 ```
+
+## Telling your agent about meatbag
+
+LLM agents won't know meatbag is available unless you tell them. The easiest
+way is to paste a small markdown snippet into the agent config file your tool
+already reads (CLAUDE.md, AGENTS.md, `.cursorrules`, etc.) so the agent picks
+it up automatically each session.
+
+Print the snippet:
+
+```
+meatbag agent snippet
+```
+
+Or append it directly to a project-level config file:
+
+```
+meatbag agent snippet >> CLAUDE.md
+```
+
+With `--json` the snippet is wrapped as `{"snippet": "..."}` so it can be
+post-processed:
+
+```
+meatbag --json agent snippet | jq -r .snippet >> ~/.config/AGENTS.md
+```
+
+The snippet is intentionally short. It points the agent at `meatbag agent help`
+for the full usage guide once it decides meatbag is the right tool for the job.
