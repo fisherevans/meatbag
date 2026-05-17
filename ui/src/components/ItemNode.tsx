@@ -87,8 +87,6 @@ export function ItemNode({ slug, item, depth, onChange, registerObserver }: Prop
   };
 
   const isDone = item.state === "done";
-  const isSkipped = item.state === "skipped";
-  const isOpen = !isDone && !isSkipped;
 
   const hasBody =
     !!item.content_html ||
@@ -165,24 +163,6 @@ export function ItemNode({ slug, item, depth, onChange, registerObserver }: Prop
         </div>
 
         <div className="item-actions">
-          {isOpen && (
-            <button
-              className="btn btn-done btn-large"
-              onClick={() => setExact("done")}
-              disabled={busy}
-            >
-              Mark done
-            </button>
-          )}
-          {isDone && (
-            <button
-              className="btn btn-ghost btn-large"
-              onClick={() => setExact("todo")}
-              disabled={busy}
-            >
-              Reopen
-            </button>
-          )}
           <StateSelect
             current={item.state}
             onPick={(s) => setExact(s)}
@@ -191,7 +171,7 @@ export function ItemNode({ slug, item, depth, onChange, registerObserver }: Prop
         </div>
       </header>
 
-      {!collapsed && (
+      {!collapsed && hasBody && (
         <div className="item-body">
           {item.content_html && (
             <div
