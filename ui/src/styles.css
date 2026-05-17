@@ -564,17 +564,6 @@ header.top {
 }
 .btn-primary:hover:not(:disabled) { background: var(--accent); border-color: var(--accent); }
 
-.btn-done {
-  background: var(--c-done);
-  border-color: var(--c-done);
-  color: #0a1a10;
-  font-weight: 600;
-}
-.btn-done:hover:not(:disabled) {
-  background: #7dd6a0;
-  border-color: #7dd6a0;
-}
-
 .btn-ghost {
   background: transparent;
   border-color: var(--border-strong);
