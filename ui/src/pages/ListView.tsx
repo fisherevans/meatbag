@@ -80,34 +80,36 @@ export function ListView() {
     )
   );
 
-  // Scroll to the URL fragment item once per fragment change. We track the
-  // last-handled hash via a ref so that subsequent list refetches (e.g. from
-  // SSE-driven updates) don't re-scroll back to the fragment target.
-  const handledHashRef = useRef<string | null>(null);
+  // Scroll to the URL fragment item exactly once, the first time the list
+  // becomes available. This handles the genuine fragment-navigation cases:
+  // (a) initial page load with a hash in the URL bar, and (b) deep links
+  // pasted from `meatbag url`. Sidebar clicks manage their own scrolling and
+  // must not trigger this effect, otherwise unrelated re-renders (e.g. an
+  // SSE-driven refetch after a checkbox toggle) would re-scroll back to the
+  // sidebar's fragment target.
+  const didInitialScrollRef = useRef(false);
   useEffect(() => {
-    if (!list) return;
+    if (!list || didInitialScrollRef.current) return;
+    didInitialScrollRef.current = true;
     const hash = window.location.hash.slice(1);
     if (!hash) return;
-    if (handledHashRef.current === hash) return;
     const el = document.getElementById(hash);
-    if (el) {
-      handledHashRef.current = hash;
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
-      el.classList.add("highlight");
-      const t = setTimeout(() => el.classList.remove("highlight"), 2400);
-      return () => clearTimeout(t);
-    }
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+    el.classList.add("highlight");
+    const t = setTimeout(() => el.classList.remove("highlight"), 2400);
+    return () => clearTimeout(t);
   }, [list]);
 
-  // Re-run the fragment scroll when the URL hash changes (e.g. sidebar click
-  // calls history.replaceState, or user navigates via a fragment link).
+  // Re-run the fragment scroll on actual hash navigation (browser back/forward
+  // to a fragment URL). Sidebar clicks use history.replaceState which does NOT
+  // fire hashchange, so this stays scoped to genuine navigation events.
   useEffect(() => {
     const onHashChange = () => {
       const hash = window.location.hash.slice(1);
       if (!hash) return;
       const el = document.getElementById(hash);
       if (!el) return;
-      handledHashRef.current = hash;
       el.scrollIntoView({ behavior: "smooth", block: "start" });
       el.classList.add("highlight");
       setTimeout(() => el.classList.remove("highlight"), 2400);
