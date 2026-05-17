@@ -15,11 +15,8 @@ import (
 
 	"github.com/fisherevans/meatbag/internal/daemon"
 	"github.com/fisherevans/meatbag/internal/store"
+	"github.com/fisherevans/meatbag/internal/version"
 )
-
-// installVersion is the string surfaced in the success line. Kept in sync with
-// daemon.Server.Version; not wired through a build flag yet.
-const installVersion = "0.1.0"
 
 func newInstallCmd() *cobra.Command {
 	var target string
@@ -108,7 +105,7 @@ func runInstall(target string, noRestart bool) error {
 	// Emit results.
 	out := map[string]any{
 		"installed_to":     targetPath,
-		"version":          installVersion,
+		"version":          version.Version,
 		"restarted_daemon": restartedState != nil,
 	}
 	if restartedState != nil {
@@ -120,7 +117,7 @@ func runInstall(target string, noRestart bool) error {
 	}
 
 	var b strings.Builder
-	fmt.Fprintf(&b, "installed meatbag %s to %s", installVersion, targetPath)
+	fmt.Fprintf(&b, "installed meatbag %s to %s", version.Version, targetPath)
 	if restartedState != nil {
 		fmt.Fprintf(&b, "\ndaemon restarted: http://127.0.0.1:%d", restartedState.Port)
 	} else if daemonWasRunning && noRestart {

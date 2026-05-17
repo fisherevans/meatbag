@@ -2,6 +2,18 @@
 
 BIN := bin/meatbag
 
+# Version metadata injected into the binary via -ldflags. `git describe`
+# yields the most recent tag plus a -N-g<sha> suffix on commits past the tag,
+# or -dirty if the worktree is unclean. The fallbacks let `go run`/`go build`
+# without make still produce a usable binary.
+VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
+COMMIT  := $(shell git rev-parse --short HEAD 2>/dev/null || echo "")
+DATE    := $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
+
+LDFLAGS := -X github.com/fisherevans/meatbag/internal/version.Version=$(VERSION) \
+           -X github.com/fisherevans/meatbag/internal/version.Commit=$(COMMIT) \
+           -X github.com/fisherevans/meatbag/internal/version.Date=$(DATE)
+
 build: sync-guide ui go
 
 # Keep the embedded copy of the agent guide in sync with the canonical
@@ -17,7 +29,7 @@ ui:
 
 go:
 	mkdir -p bin
-	go build -o $(BIN) ./cmd/meatbag
+	go build -ldflags "$(LDFLAGS)" -o $(BIN) ./cmd/meatbag
 
 test:
 	go test ./...
