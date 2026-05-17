@@ -20,7 +20,7 @@ Always pass `--json` so output is parseable:
 
 ```
 meatbag --json list create --title "..." --project .
-meatbag --json item add <slug> --title "..." --owner human --inputs @inputs.yaml
+meatbag --json item add <slug> --title "..." --owner human --inputs inputs.yaml
 meatbag --json input get <slug> <item> <field> [--reveal]
 meatbag --json url <slug>
 ```
