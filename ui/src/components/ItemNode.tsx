@@ -2,8 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { api, Item, State } from "../lib/api";
 import { InputField } from "./InputField";
 import { StateIcon } from "./StateIcon";
+import { StatePicker } from "./StatePicker";
 
 const STATES: State[] = ["todo", "in_progress", "blocked", "done", "skipped"];
+const LONG_PRESS_MS = 500;
 
 interface Props {
   slug: string;
@@ -19,12 +21,23 @@ export function ItemNode({ slug, item, depth, onChange, registerObserver }: Prop
     item.state === "done" || item.state === "skipped"
   );
   const [busy, setBusy] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
+  // Long-press state: timer handle + flag so the release after a long-press
+  // doesn't also fire the toggle.
+  const pressTimer = useRef<number | null>(null);
+  const longPressFired = useRef(false);
 
   useEffect(() => {
     registerObserver(item.id, ref.current);
     return () => registerObserver(item.id, null);
   }, [item.id, registerObserver]);
+
+  useEffect(() => {
+    return () => {
+      if (pressTimer.current !== null) window.clearTimeout(pressTimer.current);
+    };
+  }, []);
 
   const setExact = async (s: State) => {
     setBusy(true);
@@ -36,9 +49,41 @@ export function ItemNode({ slug, item, depth, onChange, registerObserver }: Prop
     }
   };
 
-  const cycle = () => {
-    const i = STATES.indexOf(item.state);
-    setExact(STATES[(i + 1) % STATES.length]);
+  // 2-state toggle: done <-> todo. Any other state resets to todo.
+  const toggle = () => {
+    if (item.state === "todo") {
+      setExact("done");
+    } else {
+      setExact("todo");
+    }
+  };
+
+  const startPress = () => {
+    longPressFired.current = false;
+    if (pressTimer.current !== null) window.clearTimeout(pressTimer.current);
+    pressTimer.current = window.setTimeout(() => {
+      longPressFired.current = true;
+      pressTimer.current = null;
+      setPickerOpen(true);
+    }, LONG_PRESS_MS);
+  };
+
+  const cancelPress = () => {
+    if (pressTimer.current !== null) {
+      window.clearTimeout(pressTimer.current);
+      pressTimer.current = null;
+    }
+  };
+
+  const endPress = () => {
+    // If the long-press timer already fired, the picker is opening - swallow
+    // the release so we don't also toggle.
+    if (longPressFired.current) {
+      longPressFired.current = false;
+      return;
+    }
+    cancelPress();
+    if (!busy) toggle();
   };
 
   const isDone = item.state === "done";
@@ -59,15 +104,53 @@ export function ItemNode({ slug, item, depth, onChange, registerObserver }: Prop
       } ${isDone ? "is-done" : ""}`}
     >
       <header className="item-header">
-        <button
-          className="state-toggle"
-          onClick={cycle}
-          disabled={busy}
-          title="Click to cycle status"
-          aria-label={`status: ${item.state}, click to cycle`}
-        >
-          <StateIcon state={item.state} size={28} />
-        </button>
+        <div className="item-collapse-slot">
+          {hasBody && (
+            <button
+              className="collapse-btn"
+              onClick={() => setCollapsed((c) => !c)}
+              aria-label={collapsed ? "expand" : "collapse"}
+              title={collapsed ? "Expand" : "Collapse"}
+            >
+              <Chevron open={!collapsed} />
+            </button>
+          )}
+        </div>
+
+        <div className="state-toggle-wrap">
+          <button
+            className="state-toggle"
+            onMouseDown={startPress}
+            onMouseUp={endPress}
+            onMouseLeave={cancelPress}
+            onTouchStart={(e) => {
+              // Prevent the synthetic mousedown that follows so we don't double-fire.
+              e.preventDefault();
+              startPress();
+            }}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              endPress();
+            }}
+            onTouchCancel={cancelPress}
+            onContextMenu={(e) => e.preventDefault()}
+            disabled={busy}
+            title="Click to toggle, long-press for all states"
+            aria-label={`status: ${item.state}, click to toggle, long-press for picker`}
+          >
+            <StateIcon state={item.state} size={28} />
+          </button>
+          {pickerOpen && (
+            <StatePicker
+              current={item.state}
+              onPick={(s) => {
+                setPickerOpen(false);
+                setExact(s);
+              }}
+              onDismiss={() => setPickerOpen(false)}
+            />
+          )}
+        </div>
 
         <div className="item-meta">
           <div className="item-meta-row">
@@ -111,16 +194,6 @@ export function ItemNode({ slug, item, depth, onChange, registerObserver }: Prop
               <option key={s} value={s}>{prettyState(s)}</option>
             ))}
           </select>
-          {hasBody && (
-            <button
-              className="collapse-btn"
-              onClick={() => setCollapsed((c) => !c)}
-              aria-label={collapsed ? "expand" : "collapse"}
-              title={collapsed ? "Expand" : "Collapse"}
-            >
-              <Chevron open={!collapsed} />
-            </button>
-          )}
         </div>
       </header>
 
