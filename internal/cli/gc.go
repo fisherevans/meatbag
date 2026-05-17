@@ -15,10 +15,12 @@ func newGCCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "gc",
 		Short: "Reconcile Keychain entries and blob files against current lists",
-		Long: "Scans every active and archived list, collects referenced secret " +
-			"and blob refs, then deletes anything in Keychain (service=meatbag) " +
-			"or ~/.meatbag/blobs/ that isn't referenced. --dry-run reports without " +
-			"deleting.",
+		Long: "Scans every active and archived list in the current $MEATBAG_HOME, " +
+			"collects referenced secret and blob refs, then deletes orphaned " +
+			"Keychain entries (service=meatbag) whose list-id belongs to a list " +
+			"in this home, plus orphaned files in $MEATBAG_HOME/blobs/. Keychain " +
+			"entries belonging to lists in other homes are reported as 'alien' " +
+			"and left alone. --dry-run reports without deleting.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			s, err := openStore()
 			if err != nil {
@@ -30,17 +32,27 @@ func newGCCmd() *cobra.Command {
 			}
 			refSecrets := map[string]bool{}
 			refBlobs := map[string]bool{}
+			homeListIDs := map[string]bool{}
 			for _, l := range lists {
+				homeListIDs[l.ID] = true
 				collectRefs(l.Items, refSecrets, refBlobs)
 			}
 
-			// Reconcile Keychain.
+			// Reconcile Keychain. Scope to entries whose list-id belongs to a
+			// list in the current $MEATBAG_HOME. Entries from other homes
+			// (e.g. another working dir or a real-user home when running tests
+			// in an isolated tmp dir) are treated as "alien" and left alone.
 			allKC, err := secrets.ListAll()
 			if err != nil {
 				return fmt.Errorf("keychain list: %w", err)
 			}
 			var orphanSecrets []secrets.Ref
+			var alienSecrets int
 			for _, r := range allKC {
+				if !homeListIDs[r.ListID] {
+					alienSecrets++
+					continue
+				}
 				if !refSecrets[r.Account()] {
 					orphanSecrets = append(orphanSecrets, r)
 				}
@@ -67,10 +79,15 @@ func newGCCmd() *cobra.Command {
 
 			out := map[string]any{
 				"orphan_secrets": len(orphanSecrets),
+				"alien_secrets":  alienSecrets,
 				"orphan_blobs":   len(orphanBlobs),
 				"dry_run":        dryRun,
 			}
-			text := fmt.Sprintf("%d orphan secrets, %d orphan blobs", len(orphanSecrets), len(orphanBlobs))
+			text := fmt.Sprintf("%d orphan secrets", len(orphanSecrets))
+			if alienSecrets > 0 {
+				text += fmt.Sprintf(", %d alien (left alone)", alienSecrets)
+			}
+			text += fmt.Sprintf(", %d orphan blobs", len(orphanBlobs))
 			if dryRun {
 				text += " (dry-run, nothing deleted)"
 			} else {

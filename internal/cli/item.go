@@ -170,6 +170,7 @@ func itemShowCmd() *cobra.Command {
 					"owner": it.Owner, "state": it.State, "content": it.Content,
 					"inputs": it.Inputs, "input_values": it.InputValues,
 					"note": it.Note, "children": it.Children,
+					"created_at": it.CreatedAt, "updated_at": it.UpdatedAt,
 				})
 			}
 			fmt.Printf("%s %s %s\n", stateMarker(it.State), label, it.Title)
