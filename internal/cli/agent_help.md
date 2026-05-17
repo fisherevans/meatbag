@@ -62,7 +62,7 @@ meatbag item add set-up-postgres-replica \
 meatbag item add set-up-postgres-replica \
   --title "Get the read-replica password from 1Password" --owner human \
   --content @notes.md \
-  --inputs @inputs.yaml
+  --inputs inputs.yaml
 ```
 
 `inputs.yaml`:
@@ -190,7 +190,7 @@ meatbag list delete <list> --yes
 
 meatbag item add <list> --title "..." [--owner human|agent]
     [--parent <ref>] [--after <ref>] [--before <ref>]
-    [--content @file] [--inputs @schema.yaml]
+    [--content @file] [--inputs schema.yaml]
 meatbag item show <list> <item>
 meatbag item state <list> <item> <state> [--note "..."]
 meatbag item update <list> <item> [--title ...] [--content @file]
