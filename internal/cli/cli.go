@@ -33,6 +33,7 @@ func newRoot() *cobra.Command {
 		newItemCmd(),
 		newInputCmd(),
 		newURLCmd(),
+		newWaitCmd(),
 		newWebCmd(),
 		newGCCmd(),
 		newAgentCmd(),

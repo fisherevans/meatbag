@@ -132,6 +132,35 @@ For non-secret values, just read them:
 meatbag --json input get set-up-postgres-replica 1 cidr
 ```
 
+## Waiting for the human
+
+Polling `meatbag input get` in a loop works but burns tokens. For long-running
+agents (especially Claude Code bash monitors that watch for completion), use
+`meatbag wait` instead. It blocks on the list file via fsnotify and wakes up
+the moment the human changes anything relevant.
+
+```
+meatbag wait set-up-postgres-replica 2 --state=done
+meatbag wait set-up-postgres-replica 1 --input=replica_password --timeout=30m
+meatbag wait set-up-postgres-replica 2 --state=done,skipped --input=cert
+```
+
+- `--state=<s1,s2,...>`: exit 0 when the item enters any listed state.
+- `--input=<field>`: repeatable. All listed inputs must have a value.
+- `--timeout=<dur>`: Go duration (`30m`, `1h`, `5s`). Default `1h`. `0` blocks
+  forever.
+
+Exit codes follow `timeout(1)` conventions:
+
+- `0` - conditions satisfied.
+- `124` - timed out before satisfied.
+- `2` - the item or list disappeared while waiting.
+- `130` - interrupted (SIGINT).
+
+State and input conditions AND together; multiple states inside `--state`
+OR. It's cheap to leave running for an hour - fsnotify, not polling - so
+prefer this over `sleep N && meatbag input get ...` loops.
+
 ## Marking work complete and tidying up
 
 - Mark the human's items `done` when they confirm.
@@ -171,6 +200,8 @@ meatbag item delete <list> <item> --yes
 meatbag input get <list> <item> <field> [--reveal]
 meatbag input set <list> <item> <field> (--value "..." | --file <path> | --stdin)
 meatbag input clear <list> <item> <field>
+
+meatbag wait <list> <item> [--state s1,s2] [--input field ...] [--timeout 1h]
 
 meatbag url <list> [<item>] [--field <name>]
 meatbag web start | stop | status | logs | restart
