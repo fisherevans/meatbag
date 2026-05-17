@@ -97,6 +97,9 @@ export const api = {
   listLists: () => jget<ListRow[]>("/api/lists?status=active"),
   listListsArchived: () => jget<ListRow[]>("/api/lists?status=archived"),
   getList: (slug: string) => jget<ListDetail>(`/api/lists/${slug}`),
+  archiveList: (slug: string) => jsend(`/api/lists/${slug}/archive`, "POST"),
+  unarchiveList: (slug: string) => jsend(`/api/lists/${slug}/unarchive`, "POST"),
+  deleteList: (slug: string) => jsend(`/api/lists/${slug}`, "DELETE"),
   setState: (slug: string, itemID: string, state: State, note?: string) =>
     jsend(`/api/lists/${slug}/items/${itemID}/state`, "POST", { state, note }),
   setInput: (slug: string, itemID: string, field: string, value: unknown) =>

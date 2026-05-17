@@ -105,6 +105,57 @@ header.top {
   letter-spacing: -0.01em;
 }
 
+/* Push everything after this to the right side of the header. */
+.top-spacer { flex: 1; }
+
+.top-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Pill-style segmented control for Active/Archived on the home header. */
+.status-toggle {
+  display: inline-flex;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px;
+}
+.status-toggle-btn {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  transition: background 120ms ease, color 120ms ease;
+}
+.status-toggle-btn:hover:not(.active) { color: var(--text); }
+.status-toggle-btn.active {
+  background: var(--accent-2);
+  color: white;
+}
+
+.status-badge {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 10px;
+  background: var(--panel-3);
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+.status-badge.archived {
+  background: rgba(224, 192, 104, 0.12);
+  color: var(--c-warn);
+  border-color: rgba(224, 192, 104, 0.3);
+}
+
 /* ============================================================
    List switcher dropdown (header)
    ============================================================ */
@@ -235,13 +286,27 @@ header.top {
   border-radius: var(--radius);
   margin-bottom: 8px;
   color: var(--text);
+  cursor: pointer;
+  text-decoration: none;
 }
 .list-row:hover { border-color: var(--border-strong); background: var(--panel-2); }
+.list-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .list-row .title { font-weight: 600; font-size: 15px; }
 .list-row .slug { color: var(--muted); font-size: 12px; margin-left: 8px; font-family: ui-monospace, monospace; font-weight: 400; }
 .list-row .meta { color: var(--muted); font-size: 12px; margin-top: 4px; }
 .list-row .progress { color: var(--muted); font-size: 12px; text-align: right; }
 .list-row .progress .awaiting { color: var(--c-warn); font-weight: 500; }
+
+.list-row-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
 
 /* ============================================================
    List page layout: sidebar + main
@@ -570,6 +635,19 @@ header.top {
   color: var(--muted);
 }
 .btn-ghost:hover:not(:disabled) { background: var(--panel-2); color: var(--text); }
+
+/* Destructive action - kept subtle by default, reddens on hover so a stray
+   click in the row doesn't feel like a tripwire. */
+.btn-danger {
+  background: transparent;
+  border-color: var(--border-strong);
+  color: var(--c-err);
+}
+.btn-danger:hover:not(:disabled) {
+  background: rgba(224, 122, 122, 0.12);
+  border-color: var(--c-err);
+  color: var(--c-err);
+}
 
 /* ============================================================
    State select (always-visible status dropdown in item actions)

@@ -98,6 +98,9 @@ func (srv *Server) routes() http.Handler {
 	})
 	mux.HandleFunc("GET /api/lists", srv.handleLists)
 	mux.HandleFunc("GET /api/lists/{slug}", srv.handleList)
+	mux.HandleFunc("DELETE /api/lists/{slug}", srv.handleListDelete)
+	mux.HandleFunc("POST /api/lists/{slug}/archive", srv.handleListArchive)
+	mux.HandleFunc("POST /api/lists/{slug}/unarchive", srv.handleListUnarchive)
 	mux.HandleFunc("POST /api/lists/{slug}/items/{itemID}/state", srv.handleItemState)
 	mux.HandleFunc("POST /api/lists/{slug}/items/{itemID}/inputs/{field}", srv.handleSetInput)
 	mux.HandleFunc("DELETE /api/lists/{slug}/items/{itemID}/inputs/{field}", srv.handleClearInput)
@@ -347,6 +350,61 @@ func (srv *Server) handleList(w http.ResponseWriter, r *http.Request) {
 		dto.Items = append(dto.Items, toItemDTO(it, labels))
 	}
 	writeJSON(w, 200, dto)
+}
+
+func (srv *Server) handleListArchive(w http.ResponseWriter, r *http.Request) {
+	slug := r.PathValue("slug")
+	if err := srv.Store.Archive(slug); err != nil {
+		if errors.Is(err, store.ErrNotFound) {
+			writeErr(w, 404, "list not found")
+			return
+		}
+		writeErr(w, 500, err.Error())
+		return
+	}
+	writeJSON(w, 200, map[string]string{"slug": slug, "status": "archived"})
+}
+
+func (srv *Server) handleListUnarchive(w http.ResponseWriter, r *http.Request) {
+	slug := r.PathValue("slug")
+	if err := srv.Store.Unarchive(slug); err != nil {
+		if errors.Is(err, store.ErrNotFound) {
+			writeErr(w, 404, "list not found")
+			return
+		}
+		writeErr(w, 500, err.Error())
+		return
+	}
+	writeJSON(w, 200, map[string]string{"slug": slug, "status": "active"})
+}
+
+// handleListDelete removes the list YAML and purges any secrets/blobs it
+// referenced. Matches the CLI's `meatbag list delete --yes` semantics.
+func (srv *Server) handleListDelete(w http.ResponseWriter, r *http.Request) {
+	slug := r.PathValue("slug")
+	l, err := srv.loadBySlug(slug)
+	if err != nil {
+		writeErr(w, 404, "list not found")
+		return
+	}
+	// Walk the tree, deleting referenced secrets/blobs before unlinking the
+	// YAML so a crash mid-delete leaves the list pointing at orphaned (but gc-
+	// recoverable) refs rather than the other way around.
+	var walk func(items []*store.Item)
+	walk = func(items []*store.Item) {
+		for _, it := range items {
+			for _, v := range it.InputValues {
+				cleanupValue(v, srv.Blobs)
+			}
+			walk(it.Children)
+		}
+	}
+	walk(l.Items)
+	if err := srv.Store.Delete(slug); err != nil {
+		writeErr(w, 500, err.Error())
+		return
+	}
+	writeJSON(w, 200, map[string]string{"slug": slug, "deleted": "true"})
 }
 
 func (srv *Server) handleItemState(w http.ResponseWriter, r *http.Request) {

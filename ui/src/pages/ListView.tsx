@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { api, ListDetail } from "../lib/api";
 import { useSSE } from "../lib/sse";
 import { ItemNode } from "../components/ItemNode";
@@ -9,9 +9,11 @@ import { ListSwitcher } from "../components/ListSwitcher";
 
 export function ListView() {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const [list, setList] = useState<ListDetail | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [activeID, setActiveID] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   // IntersectionObserver: pick the item closest to the top of the viewport as
   // "active" so the sidebar can highlight it.
@@ -123,6 +125,50 @@ export function ListView() {
     return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
 
+  const doArchive = async () => {
+    if (!slug) return;
+    setBusy(true);
+    try {
+      await api.archiveList(slug);
+      await refresh();
+    } catch (e: any) {
+      setErr(String(e?.message ?? e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const doRestore = async () => {
+    if (!slug) return;
+    setBusy(true);
+    try {
+      await api.unarchiveList(slug);
+      await refresh();
+    } catch (e: any) {
+      setErr(String(e?.message ?? e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const doDelete = async () => {
+    if (!slug || !list) return;
+    const ok = window.confirm(
+      `Delete "${list.title}" permanently?\n\nThis purges any stored passwords and uploaded files referenced by the list. There is no undo.`
+    );
+    if (!ok) return;
+    setBusy(true);
+    try {
+      await api.deleteList(slug);
+      navigate("/");
+    } catch (e: any) {
+      setErr(String(e?.message ?? e));
+      setBusy(false);
+    }
+  };
+
+  const archived = list?.status === "archived";
+
   return (
     <div className="page list-page">
       <header className="top">
@@ -132,6 +178,39 @@ export function ListView() {
         </Link>
         <span className="top-divider" aria-hidden />
         <ListSwitcher currentSlug={list?.slug ?? slug} currentTitle={list ? list.title : slug ?? "…"} />
+        {list && archived && <span className="status-badge archived">archived</span>}
+        <div className="top-spacer" />
+        {list && (
+          <div className="top-actions">
+            {archived ? (
+              <button
+                className="btn btn-ghost btn-small"
+                disabled={busy}
+                onClick={doRestore}
+                title="Restore list to active"
+              >
+                Restore
+              </button>
+            ) : (
+              <button
+                className="btn btn-ghost btn-small"
+                disabled={busy}
+                onClick={doArchive}
+                title="Move list to archive"
+              >
+                Archive
+              </button>
+            )}
+            <button
+              className="btn btn-danger btn-small"
+              disabled={busy}
+              onClick={doDelete}
+              title="Delete list and purge secrets/blobs"
+            >
+              Delete
+            </button>
+          </div>
+        )}
       </header>
       {err && <div className="empty">{err}</div>}
       {list && (
