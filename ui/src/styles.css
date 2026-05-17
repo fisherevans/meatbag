@@ -358,7 +358,10 @@ header.top {
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  overflow: hidden;
+  /* overflow:visible so the long-press state picker (an absolutely-positioned
+     popover anchored to the status icon) isn't clipped by the card edge. The
+     body rounds its own bottom corners below so the card still looks clean. */
+  overflow: visible;
   transition: border-color 120ms ease, box-shadow 120ms ease;
   /* Clear the sticky top header (~56px) plus visual breathing room when the
      browser scrolls an item into view via #fragment or sidebar jump. */
@@ -605,6 +608,11 @@ header.top {
 .item-body {
   border-top: 1px solid var(--border);
   background: var(--bg-2);
+  /* Round the bottom corners to match the parent card now that .item is
+     overflow:visible (otherwise the body background would square off the
+     card's rounded bottom). */
+  border-bottom-left-radius: calc(var(--radius) - 1px);
+  border-bottom-right-radius: calc(var(--radius) - 1px);
   padding: 14px 16px 16px 62px;
   display: flex;
   flex-direction: column;
