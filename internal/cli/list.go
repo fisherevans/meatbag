@@ -353,7 +353,12 @@ func listDeleteCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "delete <list>",
 		Short: "Delete a list and purge its secrets + blobs",
-		Args:  cobra.ExactArgs(1),
+		Long: "Delete a list and everything under it. This is irreversible: the " +
+			"list YAML is removed, every Keychain entry (service=meatbag) " +
+			"referenced by any input value is deleted, and every " +
+			"content-addressed blob in ~/.meatbag/blobs/ referenced by the " +
+			"list's input values is purged. Requires --yes.",
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if !yes {
 				return fmt.Errorf("refusing to delete without --yes")
