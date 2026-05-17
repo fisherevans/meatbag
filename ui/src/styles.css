@@ -11,9 +11,9 @@
   --muted: #8893a8;
   --muted-2: #5d6678;
 
-  --accent: #6aa7ff;
-  --accent-2: #4d8bff;
-  --accent-dim: #1f3050;
+  --accent: #d05d57;
+  --accent-2: #b8453f;
+  --accent-dim: #3a1d1c;
 
   /* state colors */
   --c-todo: #8893a8;
@@ -360,7 +360,7 @@ header.top {
   background: var(--accent-dim);
   color: var(--text-strong);
   border-left-color: var(--accent);
-  box-shadow: inset 0 0 0 1px rgba(106, 167, 255, 0.25);
+  box-shadow: inset 0 0 0 1px rgba(208, 93, 87, 0.25);
 }
 .sidebar-item.active .sidebar-label { color: var(--accent); }
 .sidebar-item.flash {
@@ -369,9 +369,9 @@ header.top {
 /* Matches the item-card double pulse so both animations are in sync. */
 @keyframes sidebar-double-pulse {
   0%   { background: var(--panel); }
-  15%  { background: rgba(106, 167, 255, 0.55); }
+  15%  { background: rgba(208, 93, 87, 0.55); }
   35%  { background: var(--accent-dim); }
-  55%  { background: rgba(106, 167, 255, 0.6); }
+  55%  { background: rgba(208, 93, 87, 0.6); }
   80%  { background: var(--accent-dim); }
   100% { background: var(--accent-dim); }
 }
@@ -434,7 +434,7 @@ header.top {
 }
 .item.highlight {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(106, 167, 255, 0.25);
+  box-shadow: 0 0 0 3px rgba(208, 93, 87, 0.25);
 }
 .item.flash {
   animation: item-double-pulse 2.4s ease-in-out;
@@ -444,12 +444,12 @@ header.top {
    The background-color tint sweeps across the whole card in sync with the
    edge glow so the entire surface lights up rather than just the border. */
 @keyframes item-double-pulse {
-  0%   { box-shadow: 0 0 0 0 rgba(106, 167, 255, 0); border-color: var(--border); background-color: rgba(106, 167, 255, 0); }
-  15%  { box-shadow: 0 0 0 5px rgba(106, 167, 255, 0.45); border-color: var(--accent); background-color: rgba(106, 167, 255, 0.09); }
-  35%  { box-shadow: 0 0 0 1px rgba(106, 167, 255, 0.1); border-color: var(--border); background-color: rgba(106, 167, 255, 0.03); }
-  55%  { box-shadow: 0 0 0 5px rgba(106, 167, 255, 0.55); border-color: var(--accent); background-color: rgba(106, 167, 255, 0.1); }
-  80%  { box-shadow: 0 0 0 2px rgba(106, 167, 255, 0.18); border-color: var(--border); background-color: rgba(106, 167, 255, 0.04); }
-  100% { box-shadow: 0 0 0 0 rgba(106, 167, 255, 0); border-color: var(--border); background-color: rgba(106, 167, 255, 0); }
+  0%   { box-shadow: 0 0 0 0 rgba(208, 93, 87, 0); border-color: var(--border); background-color: rgba(208, 93, 87, 0); }
+  15%  { box-shadow: 0 0 0 5px rgba(208, 93, 87, 0.45); border-color: var(--accent); background-color: rgba(208, 93, 87, 0.09); }
+  35%  { box-shadow: 0 0 0 1px rgba(208, 93, 87, 0.1); border-color: var(--border); background-color: rgba(208, 93, 87, 0.03); }
+  55%  { box-shadow: 0 0 0 5px rgba(208, 93, 87, 0.55); border-color: var(--accent); background-color: rgba(208, 93, 87, 0.1); }
+  80%  { box-shadow: 0 0 0 2px rgba(208, 93, 87, 0.18); border-color: var(--border); background-color: rgba(208, 93, 87, 0.04); }
+  100% { box-shadow: 0 0 0 0 rgba(208, 93, 87, 0); border-color: var(--border); background-color: rgba(208, 93, 87, 0); }
 }
 .item.state-todo         { border-left: 4px solid var(--c-todo); }
 .item.state-in_progress  { border-left: 4px solid var(--c-in_progress); }
@@ -821,7 +821,7 @@ header.top {
   border-radius: 10px;
   font-weight: 600;
 }
-.status-pill.saving { background: rgba(106, 167, 255, 0.16); color: var(--accent); }
+.status-pill.saving { background: rgba(208, 93, 87, 0.16); color: var(--accent); }
 .status-pill.saved { background: rgba(103, 201, 139, 0.16); color: var(--c-ok); }
 .status-pill.error { background: rgba(224, 122, 122, 0.16); color: var(--c-err); }
 
@@ -853,7 +853,7 @@ header.top {
 .text-input:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(106, 167, 255, 0.2);
+  box-shadow: 0 0 0 2px rgba(208, 93, 87, 0.2);
 }
 textarea.text-input { resize: vertical; min-height: 90px; }
 
