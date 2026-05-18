@@ -1,30 +1,18 @@
 # meatbag
 
 A local CLI + web UI for to-do lists that LLM agents create for humans and
-both sides update collaboratively.
+both sides update collaboratively. The agent drives `meatbag` from its
+shell to spin up a list, nest items, and ask for structured inputs (text,
+files, secrets). The human opens a local web UI to work through it, fill
+those inputs in, and check things off. State is plain YAML under
+`~/.meatbag/`, secrets go in the macOS Keychain, and uploads are
+content-addressed blobs - so nothing is locked inside a SaaS.
 
-- Agent drives `meatbag` CLI: create lists, add nested items, request
-  structured input (text, files, secrets), mark items done.
-- Human opens the web UI (`meatbag web start`) to work through the list,
-  fill inputs, and check things off.
-- State lives in YAML files under `~/.meatbag/lists/`. Secrets go in the
-  macOS Keychain. Uploaded files are content-addressed under
-  `~/.meatbag/blobs/`.
+It's built for the case where chat scrollback is a bad place to track a
+multi-step workflow: credentials to fetch, files to upload, things to do in
+parallel while the agent keeps working.
 
-See:
-
-- `docs/agent-guide.md` (also printed by `meatbag agent help`)
-- `docs/architecture.md`
-- `docs/data-model.md`
-
-## Quick start
-
-```
-make build
-./bin/meatbag list create --title "Set up new laptop"
-./bin/meatbag web start
-./bin/meatbag url set-up-new-laptop
-```
+![meatbag list view](docs/images/list-view.png)
 
 ## Install
 
@@ -46,26 +34,26 @@ Ensure the install directory is on `$PATH`. For the default location:
 export PATH="$HOME/.local/bin:$PATH"   # add to ~/.zshrc or ~/.bashrc
 ```
 
-Once the binary is on `$PATH`, subsequent upgrades can skip the clone/make
-loop and use `meatbag install` directly - it's the same atomic-swap path that
-`make install` wraps. Pass `--target <path>` to install somewhere other than
-the default `$HOME/.local/bin/meatbag`, and `--no-restart` to skip the
-daemon respawn when you'd rather restart it yourself.
+Once the binary is on `$PATH`, subsequent upgrades skip the clone/make loop
+and use `meatbag install` directly - it's the same atomic-swap path that
+`make install` wraps. Pass `--target <path>` to install somewhere other
+than the default `$HOME/.local/bin/meatbag`, and `--no-restart` to skip
+the daemon respawn when you'd rather restart it yourself.
 
-## Build
+Quick smoke test once it's installed:
 
 ```
-make build       # builds UI + binary -> bin/meatbag
-make ui          # ui only
-make test        # go test ./...
+meatbag list create --title "Set up new laptop"
+meatbag web start
+meatbag url set-up-new-laptop
 ```
 
-## Telling your agent about meatbag
+## Hook it up to your agent
 
 LLM agents won't know meatbag is available unless you tell them. The easiest
-way is to paste a small markdown snippet into the agent config file your tool
-already reads (CLAUDE.md, AGENTS.md, `.cursorrules`, etc.) so the agent picks
-it up automatically each session.
+way is to paste a small markdown snippet into the agent config file your
+tool already reads (CLAUDE.md, AGENTS.md, `.cursorrules`, etc.) so the agent
+picks it up automatically each session.
 
 Print the snippet:
 
@@ -86,5 +74,24 @@ post-processed:
 meatbag --json agent snippet | jq -r .snippet >> ~/.config/AGENTS.md
 ```
 
-The snippet is intentionally short. It points the agent at `meatbag agent help`
-for the full usage guide once it decides meatbag is the right tool for the job.
+The snippet is intentionally short. It points the agent at `meatbag agent
+help` for the full usage guide once it decides meatbag is the right tool
+for the job.
+
+## Developer reference
+
+- `docs/agent-guide.md` - the full agent-facing guide (also printed by
+  `meatbag agent help`). Good background even if you're not the agent.
+- `docs/architecture.md` - how the CLI, daemon, and UI fit together and
+  what the on-disk layout looks like.
+- `docs/data-model.md` - YAML schema, label scheme, input types, where
+  secrets and blobs live.
+- `docs/stretch-goals.md` - things deferred from v1.
+
+### Build from source
+
+```
+make build       # builds UI + binary -> bin/meatbag
+make ui          # ui only
+make test        # go test ./...
+```
