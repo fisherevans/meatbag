@@ -1,19 +1,17 @@
 # meatbag
 
-So I've been using LLM agents to automate stuff around my homelab and kept
-hitting the same wall: the agent needs me to do things - grab an API token,
-upload a config, approve a destructive action - and chat is a terrible
-place to track any of it. Scrollback gets buried, instructions get lost,
-and the agent has to keep nagging me to check whether I'm done.
+> Chat is a terrible place to track the things an LLM agent needs from
+> you - API tokens, config uploads, destructive-action approvals. Scrollback
+> buries instructions and the agent ends up nagging you to confirm progress.
 
-meatbag is a local CLI + web UI for the to-do list that sits between us.
-The agent drives `meatbag` from its shell to spin up a list, nest items,
-and ask for structured inputs (text, files, secrets, permission-gated
-actions). I open a local web UI to actually work through it, fill those
-inputs in, approve the gated steps, and check things off. The agent uses
-`meatbag wait` so its listeners are set up before it prompts me - no
-polling, no missed updates, it just wakes up the moment I change something.
-Instructions live in the list, not in chat history.
+meatbag is a local CLI + web UI for the shared to-do list between you and
+the agent. The agent drives `meatbag` from its shell to create lists, nest
+items, and request structured inputs (text, files, secrets, permission-gated
+actions). You work through the list in a local web UI: fill inputs, approve
+gated steps, check items off. `meatbag wait` lets the agent register
+listeners before prompting, so it wakes up the moment you change something -
+no polling, no missed updates. Instructions live in the list, not in chat
+history.
 
 State is plain YAML under `~/.meatbag/`, secrets go in the macOS Keychain,
 and uploads are content-addressed blobs - nothing is locked inside a SaaS.
