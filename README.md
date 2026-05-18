@@ -1,16 +1,22 @@
 # meatbag
 
-A local CLI + web UI for to-do lists that LLM agents create for humans and
-both sides update collaboratively. The agent drives `meatbag` from its
-shell to spin up a list, nest items, and ask for structured inputs (text,
-files, secrets). The human opens a local web UI to work through it, fill
-those inputs in, and check things off. State is plain YAML under
-`~/.meatbag/`, secrets go in the macOS Keychain, and uploads are
-content-addressed blobs - so nothing is locked inside a SaaS.
+So I've been using LLM agents to automate stuff around my homelab and kept
+hitting the same wall: the agent needs me to do things - grab an API token,
+upload a config, approve a destructive action - and chat is a terrible
+place to track any of it. Scrollback gets buried, instructions get lost,
+and the agent has to keep nagging me to check whether I'm done.
 
-It's built for the case where chat scrollback is a bad place to track a
-multi-step workflow: credentials to fetch, files to upload, things to do in
-parallel while the agent keeps working.
+meatbag is a local CLI + web UI for the to-do list that sits between us.
+The agent drives `meatbag` from its shell to spin up a list, nest items,
+and ask for structured inputs (text, files, secrets, permission-gated
+actions). I open a local web UI to actually work through it, fill those
+inputs in, approve the gated steps, and check things off. The agent uses
+`meatbag wait` so its listeners are set up before it prompts me - no
+polling, no missed updates, it just wakes up the moment I change something.
+Instructions live in the list, not in chat history.
+
+State is plain YAML under `~/.meatbag/`, secrets go in the macOS Keychain,
+and uploads are content-addressed blobs - nothing is locked inside a SaaS.
 
 ![meatbag list view](docs/images/list-view.png)
 
@@ -65,13 +71,6 @@ Or append it directly to a project-level config file:
 
 ```
 meatbag agent snippet >> CLAUDE.md
-```
-
-With `--json` the snippet is wrapped as `{"snippet": "..."}` so it can be
-post-processed:
-
-```
-meatbag --json agent snippet | jq -r .snippet >> ~/.config/AGENTS.md
 ```
 
 The snippet is intentionally short. It points the agent at `meatbag agent
