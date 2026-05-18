@@ -1,8 +1,8 @@
 # meatbag
 
-> Chat is a terrible place to track the things an LLM agent needs from
-> you - API tokens, config uploads, destructive-action approvals. Scrollback
-> buries instructions and the agent ends up nagging you to confirm progress.
+> *Ever followed an agent's steps to generate a client secret, watched the
+> instructions get buried in chat history, and not known how to safely hand
+> the secret back?*
 
 meatbag is a local CLI + web UI for the shared to-do list between you and
 the agent. The agent drives `meatbag` from its shell to create lists, nest
@@ -13,8 +13,9 @@ listeners before prompting, so it wakes up the moment you change something -
 no polling, no missed updates. Instructions live in the list, not in chat
 history.
 
-State is plain YAML under `~/.meatbag/`, secrets go in the macOS Keychain,
-and uploads are content-addressed blobs - nothing is locked inside a SaaS.
+Everything is stored locally. List state is plain YAML under `~/.meatbag/`,
+secrets land in the macOS Keychain, and file uploads are content-addressed
+blobs on disk.
 
 ![meatbag list view](docs/images/list-view.png)
 
