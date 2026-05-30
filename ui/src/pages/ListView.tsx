@@ -169,6 +169,18 @@ export function ListView() {
 
   const archived = list?.status === "archived";
 
+  const popOut = () => {
+    if (!list) return;
+    const item = activeID ?? list.items[0]?.id ?? "";
+    // Use a hidden anchor click so the browser doesn't navigate away from the page.
+    const a = document.createElement("a");
+    a.href = `meatbag://open?list=${encodeURIComponent(list.slug)}&item=${encodeURIComponent(item)}`;
+    a.style.display = "none";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
   return (
     <div className="page list-page">
       <header className="top">
@@ -182,6 +194,13 @@ export function ListView() {
         <div className="top-spacer" />
         {list && (
           <div className="top-actions">
+            <button
+              className="btn btn-ghost btn-small"
+              onClick={popOut}
+              title="Open in floating overlay (requires MeatbagOverlay app)"
+            >
+              Pop out
+            </button>
             {archived ? (
               <button
                 className="btn btn-ghost btn-small"

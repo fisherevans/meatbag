@@ -132,6 +132,24 @@ For non-secret values, just read them:
 meatbag --json input get set-up-postgres-replica 1 cidr
 ```
 
+**Error handling with `--reveal`:** when a secret's Keychain entry is missing
+(despite `has_value: true` in the metadata), the command emits JSON with
+`"has_value": false` and `"keychain_missing": true` rather than printing to
+stderr. Always check for this before using the value:
+
+```bash
+result=$(meatbag --json input get my-list 1 api_key --reveal)
+if [ "$(echo "$result" | jq -r '.keychain_missing // false')" = "true" ]; then
+  echo "Secret missing from Keychain - ask the human to re-enter it"
+  exit 1
+fi
+secret=$(echo "$result" | jq -r '.value')
+```
+
+Never pipe `--reveal` output with `2>&1 | jq`. If the command fails for any
+reason, the error goes to stderr and mixing it into stdout will break jq's
+parser. Capture stdout and stderr separately.
+
 ## Waiting for the human
 
 Polling `meatbag input get` in a loop works but burns tokens. For long-running
@@ -181,17 +199,21 @@ prefer this over `sleep N && meatbag input get ...` loops.
 
 ## Reference (selected)
 
+There is no `meatbag item ls`. To see all items in a list use
+`meatbag list show <list>`. To inspect a single item use
+`meatbag item show <list> <item>`.
+
 ```
 meatbag list create --title "..." [--slug X] [--project .] [--description @file]
 meatbag list ls [--project .] [--status active|archived|all]
-meatbag list show <list>
+meatbag list show <list>              # shows the full item tree
 meatbag list archive <list>
 meatbag list delete <list> --yes
 
 meatbag item add <list> --title "..." [--owner human|agent]
     [--parent <ref>] [--after <ref>] [--before <ref>]
     [--content @file] [--inputs schema.yaml]
-meatbag item show <list> <item>
+meatbag item show <list> <item>       # single item detail
 meatbag item state <list> <item> <state> [--note "..."]
 meatbag item update <list> <item> [--title ...] [--content @file]
 meatbag item move <list> <item> [--parent <ref>] [--after <ref>] [--before <ref>]

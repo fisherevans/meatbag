@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -83,6 +84,18 @@ func inputGetCmd() *cobra.Command {
 					}
 					val, err := secrets.Get(ref)
 					if err != nil {
+						if errors.Is(err, secrets.ErrNotFound) {
+							// The YAML says has_value=true but the Keychain entry is
+							// gone. Emit a machine-readable signal rather than a bare
+							// stderr error so piped jq doesn't break.
+							out["has_value"] = false
+							out["keychain_missing"] = true
+							if gFlags.JSON {
+								return emitJSON(out)
+							}
+							fmt.Fprintf(os.Stderr, "warning: keychain entry missing for %s - secret must be re-entered\n", args[2])
+							return nil
+						}
 						return fmt.Errorf("read secret: %w", err)
 					}
 					out["value"] = val

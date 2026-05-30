@@ -548,7 +548,17 @@ func (srv *Server) handleSetInput(w http.ResponseWriter, r *http.Request) {
 			it.InputValues = map[string]store.InputValue{}
 		}
 		if prev, ok := it.InputValues[field]; ok {
-			cleanupValue(prev, srv.Blobs)
+			// For secrets, secrets.Set() already replaced the keychain entry
+			// atomically above. Calling cleanupValue here with the same
+			// secret_ref (same list/item/field key) would delete the entry
+			// that was just stored. Only clean up stale blobs in that case.
+			if newVal.SecretRef != "" {
+				if prev.BlobRef != "" {
+					cleanupValue(store.InputValue{BlobRef: prev.BlobRef}, srv.Blobs)
+				}
+			} else {
+				cleanupValue(prev, srv.Blobs)
+			}
 		}
 		it.InputValues[field] = newVal
 		return nil

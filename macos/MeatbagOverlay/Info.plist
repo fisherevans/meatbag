@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleIdentifier</key>
+    <string>com.fisherevans.meatbag-overlay</string>
+    <key>CFBundleName</key>
+    <string>MeatbagOverlay</string>
+    <key>CFBundleDisplayName</key>
+    <string>Meatbag Overlay</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0</string>
+    <key>CFBundleExecutable</key>
+    <string>MeatbagOverlay</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>12.0</string>
+
+    <!-- Hide from dock and Cmd+Tab; appears only as a status bar item -->
+    <key>LSUIElement</key>
+    <true/>
+
+    <key>NSHighResolutionCapable</key>
+    <true/>
+
+    <!-- Handle meatbag:// URL scheme -->
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>Meatbag Overlay</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>meatbag</string>
+            </array>
+        </dict>
+    </array>
+
+    <!-- Allow loading from localhost (meatbag daemon) -->
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsLocalNetworking</key>
+        <true/>
+    </dict>
+</dict>
+</plist>
