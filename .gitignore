@@ -9,3 +9,4 @@ ui/dist/
 *.log
 go.work
 go.work.sum
+macos/MeatbagOverlay/build/
