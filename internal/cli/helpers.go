@@ -11,6 +11,20 @@ import (
 	"github.com/fisherevans/meatbag/internal/store"
 )
 
+// itemInputs returns all input schemas for an item regardless of storage format.
+func itemInputs(it *store.Item) []store.Input {
+	if len(it.Blocks) > 0 {
+		var out []store.Input
+		for _, b := range it.Blocks {
+			if b.Type == "input" && b.Input != nil {
+				out = append(out, *b.Input)
+			}
+		}
+		return out
+	}
+	return it.Inputs
+}
+
 // openStore returns a Store rooted at gFlags.Home or the default.
 func openStore() (*store.Store, error) {
 	return store.New(gFlags.Home)
@@ -89,7 +103,7 @@ func progressOf(list *store.List) listProgress {
 			case store.StateSkipped:
 				p.Skipped++
 			}
-			for _, in := range it.Inputs {
+			for _, in := range itemInputs(it) {
 				v, ok := it.InputValues[in.Name]
 				if in.Required && (!ok || !v.HasValue) && it.State != store.StateDone && it.State != store.StateSkipped {
 					p.AwaitingInput++

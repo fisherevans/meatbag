@@ -229,7 +229,7 @@ func progressOf(list *store.List) progress {
 			case store.StateSkipped:
 				p.Skipped++
 			}
-			for _, in := range it.Inputs {
+			for _, in := range itemInputs(it) {
 				v, ok := it.InputValues[in.Name]
 				if in.Required && (!ok || !v.HasValue) && it.State != store.StateDone && it.State != store.StateSkipped {
 					p.AwaitingInput++
@@ -265,6 +265,13 @@ func (srv *Server) handleLists(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, 200, rows)
 }
 
+// blockDTO is the API representation of one block in an item's content sequence.
+type blockDTO struct {
+	Type        string        `json:"type"`
+	ContentHTML string        `json:"content_html,omitempty"` // type=text
+	Input       *store.Input  `json:"input,omitempty"`        // type=input
+}
+
 // listItemDTO mirrors store.Item but adds the derived label and renders
 // markdown content/description to safe HTML server-side.
 type listItemDTO struct {
@@ -278,6 +285,7 @@ type listItemDTO struct {
 	Inputs      []store.Input               `json:"inputs,omitempty"`
 	InputValues map[string]store.InputValue `json:"input_values,omitempty"`
 	Note        string                      `json:"note,omitempty"`
+	Blocks      []blockDTO                  `json:"blocks,omitempty"`
 	Children    []listItemDTO               `json:"children,omitempty"`
 }
 
@@ -299,12 +307,58 @@ func toItemDTO(it *store.Item, labels map[string]string) listItemDTO {
 		Owner: string(it.Owner), State: string(it.State),
 		Content: it.Content, ContentHTML: render.Markdown(it.Content),
 		Inputs: it.Inputs, InputValues: redactInputs(it.InputValues),
-		Note: it.Note,
+		Note:   it.Note,
+		Blocks: toBlockDTOs(it),
 	}
 	for _, c := range it.Children {
 		dto.Children = append(dto.Children, toItemDTO(c, labels))
 	}
 	return dto
+}
+
+// toBlockDTOs returns the rendered block sequence for an item. For items with
+// explicit blocks it renders each block in order. For legacy items (content +
+// inputs) it synthesizes an equivalent sequence so the API shape is uniform.
+func toBlockDTOs(it *store.Item) []blockDTO {
+	if len(it.Blocks) > 0 {
+		out := make([]blockDTO, 0, len(it.Blocks))
+		for _, b := range it.Blocks {
+			switch b.Type {
+			case "text":
+				out = append(out, blockDTO{Type: "text", ContentHTML: render.Markdown(b.Content)})
+			case "input":
+				if b.Input != nil {
+					cp := *b.Input
+					out = append(out, blockDTO{Type: "input", Input: &cp})
+				}
+			}
+		}
+		return out
+	}
+	// Synthesize from legacy fields.
+	var out []blockDTO
+	if it.Content != "" {
+		out = append(out, blockDTO{Type: "text", ContentHTML: render.Markdown(it.Content)})
+	}
+	for i := range it.Inputs {
+		cp := it.Inputs[i]
+		out = append(out, blockDTO{Type: "input", Input: &cp})
+	}
+	return out
+}
+
+// itemInputs returns all input schemas for an item regardless of storage format.
+func itemInputs(it *store.Item) []store.Input {
+	if len(it.Blocks) > 0 {
+		var out []store.Input
+		for _, b := range it.Blocks {
+			if b.Type == "input" && b.Input != nil {
+				out = append(out, *b.Input)
+			}
+		}
+		return out
+	}
+	return it.Inputs
 }
 
 // redactInputs strips secret values from input_values so the UI never receives
@@ -462,9 +516,10 @@ func (srv *Server) handleSetInput(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var schema *store.Input
-	for i := range it.Inputs {
-		if it.Inputs[i].Name == field {
-			schema = &it.Inputs[i]
+	for _, in := range itemInputs(it) {
+		if in.Name == field {
+			cp := in
+			schema = &cp
 			break
 		}
 	}

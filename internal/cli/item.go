@@ -46,7 +46,7 @@ func resolveItemRef(list *store.List, idOrLabel string) (string, error) {
 
 func itemAddCmd() *cobra.Command {
 	var (
-		title, owner, content, inputsPath, parent, after, before string
+		title, owner, content, inputsPath, blocksPath, parent, after, before string
 	)
 	cmd := &cobra.Command{
 		Use:   "add <list>",
@@ -55,6 +55,9 @@ func itemAddCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if title == "" {
 				return fmt.Errorf("--title is required")
+			}
+			if blocksPath != "" && (cmd.Flags().Changed("content") || cmd.Flags().Changed("inputs")) {
+				return fmt.Errorf("--blocks and --content/--inputs are mutually exclusive")
 			}
 			s, err := openStore()
 			if err != nil {
@@ -67,35 +70,34 @@ func itemAddCmd() *cobra.Command {
 			if !store.ValidOwner(ownerVal) {
 				return fmt.Errorf("--owner must be human or agent")
 			}
-			body, err := readContentArg(content)
-			if err != nil {
-				return err
-			}
-			var inputs []store.Input
-			if inputsPath != "" {
-				data, err := os.ReadFile(inputsPath)
-				if err != nil {
-					return fmt.Errorf("read --inputs: %w", err)
-				}
-				if err := yaml.Unmarshal(data, &inputs); err != nil {
-					return fmt.Errorf("parse --inputs: %w", err)
-				}
-				for _, in := range inputs {
-					if !validInputType(in.Type) {
-						return fmt.Errorf("invalid input type %q on field %q", in.Type, in.Name)
-					}
-				}
-			}
 			now := time.Now().UTC()
 			it := &store.Item{
 				ID:        store.NewItemID(),
 				Title:     title,
 				Owner:     ownerVal,
 				State:     store.StateTodo,
-				Content:   body,
-				Inputs:    inputs,
 				CreatedAt: now,
 				UpdatedAt: now,
+			}
+			if blocksPath != "" {
+				blocks, err := readBlocksArg(blocksPath)
+				if err != nil {
+					return err
+				}
+				it.Blocks = blocks
+			} else {
+				body, err := readContentArg(content)
+				if err != nil {
+					return err
+				}
+				it.Content = body
+				if inputsPath != "" {
+					inputs, err := readInputsArg(inputsPath)
+					if err != nil {
+						return err
+					}
+					it.Inputs = inputs
+				}
 			}
 			err = s.Update(args[0], func(l *store.List) error {
 				parentID, err := resolveItemRef(l, parent)
@@ -126,10 +128,55 @@ func itemAddCmd() *cobra.Command {
 	cmd.Flags().StringVar(&owner, "owner", "human", "human | agent")
 	cmd.Flags().StringVar(&content, "content", "", "markdown body (use @file or @-)")
 	cmd.Flags().StringVar(&inputsPath, "inputs", "", "path to a YAML file defining input fields")
+	cmd.Flags().StringVar(&blocksPath, "blocks", "", "path to a YAML file defining interleaved text+input blocks")
 	cmd.Flags().StringVar(&parent, "parent", "", "parent item id or label")
 	cmd.Flags().StringVar(&after, "after", "", "place after this sibling")
 	cmd.Flags().StringVar(&before, "before", "", "place before this sibling")
 	return cmd
+}
+
+func readInputsArg(path string) ([]store.Input, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("read --inputs: %w", err)
+	}
+	var inputs []store.Input
+	if err := yaml.Unmarshal(data, &inputs); err != nil {
+		return nil, fmt.Errorf("parse --inputs: %w", err)
+	}
+	for _, in := range inputs {
+		if !validInputType(in.Type) {
+			return nil, fmt.Errorf("invalid input type %q on field %q", in.Type, in.Name)
+		}
+	}
+	return inputs, nil
+}
+
+func readBlocksArg(path string) ([]store.Block, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("read --blocks: %w", err)
+	}
+	var blocks []store.Block
+	if err := yaml.Unmarshal(data, &blocks); err != nil {
+		return nil, fmt.Errorf("parse --blocks: %w", err)
+	}
+	for i, b := range blocks {
+		switch b.Type {
+		case "text":
+			// nothing to validate
+		case "input":
+			if b.Input == nil {
+				return nil, fmt.Errorf("blocks[%d]: type=input requires an 'input:' field", i)
+			}
+			if !validInputType(b.Input.Type) {
+				return nil, fmt.Errorf("blocks[%d]: invalid input type %q on field %q", i, b.Input.Type, b.Input.Name)
+			}
+		default:
+			return nil, fmt.Errorf("blocks[%d]: unknown type %q (want text or input)", i, b.Type)
+		}
+	}
+	return blocks, nil
 }
 
 func validInputType(t string) bool {
@@ -168,7 +215,8 @@ func itemShowCmd() *cobra.Command {
 				return emitJSON(map[string]any{
 					"id": it.ID, "label": label, "title": it.Title,
 					"owner": it.Owner, "state": it.State, "content": it.Content,
-					"inputs": it.Inputs, "input_values": it.InputValues,
+					"inputs": it.Inputs, "blocks": it.Blocks,
+					"input_values": it.InputValues,
 					"note": it.Note, "children": it.Children,
 					"created_at": it.CreatedAt, "updated_at": it.UpdatedAt,
 				})
@@ -178,20 +226,40 @@ func itemShowCmd() *cobra.Command {
 			if it.Note != "" {
 				fmt.Printf("note: %s\n", it.Note)
 			}
-			if it.Content != "" {
+			if len(it.Blocks) > 0 {
 				fmt.Println()
-				fmt.Println(it.Content)
-			}
-			if len(it.Inputs) > 0 {
-				fmt.Println("\ninputs:")
-				for _, in := range it.Inputs {
-					flag := ""
-					if v, ok := it.InputValues[in.Name]; ok && v.HasValue {
-						flag = " [set]"
-					} else if in.Required {
-						flag = " [required]"
+				for i, b := range it.Blocks {
+					switch b.Type {
+					case "text":
+						fmt.Printf("[block %d: text]\n%s\n", i+1, b.Content)
+					case "input":
+						if b.Input != nil {
+							flag := ""
+							if v, ok := it.InputValues[b.Input.Name]; ok && v.HasValue {
+								flag = " [set]"
+							} else if b.Input.Required {
+								flag = " [required]"
+							}
+							fmt.Printf("[block %d: input] %s: %s%s\n", i+1, b.Input.Name, b.Input.Type, flag)
+						}
 					}
-					fmt.Printf("  %s: %s%s\n", in.Name, in.Type, flag)
+				}
+			} else {
+				if it.Content != "" {
+					fmt.Println()
+					fmt.Println(it.Content)
+				}
+				if len(it.Inputs) > 0 {
+					fmt.Println("\ninputs:")
+					for _, in := range it.Inputs {
+						flag := ""
+						if v, ok := it.InputValues[in.Name]; ok && v.HasValue {
+							flag = " [set]"
+						} else if in.Required {
+							flag = " [required]"
+						}
+						fmt.Printf("  %s: %s%s\n", in.Name, in.Type, flag)
+					}
 				}
 			}
 			return nil
@@ -201,12 +269,15 @@ func itemShowCmd() *cobra.Command {
 }
 
 func itemUpdateCmd() *cobra.Command {
-	var title, content, owner, inputsPath string
+	var title, content, owner, inputsPath, blocksPath string
 	cmd := &cobra.Command{
 		Use:   "update <list> <item>",
 		Short: "Update an item's title, content, owner, or input schema",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if cmd.Flags().Changed("blocks") && (cmd.Flags().Changed("content") || cmd.Flags().Changed("inputs")) {
+				return fmt.Errorf("--blocks and --content/--inputs are mutually exclusive")
+			}
 			s, err := openStore()
 			if err != nil {
 				return err
@@ -219,13 +290,6 @@ func itemUpdateCmd() *cobra.Command {
 				if cmd.Flags().Changed("title") {
 					it.Title = title
 				}
-				if cmd.Flags().Changed("content") {
-					body, err := readContentArg(content)
-					if err != nil {
-						return err
-					}
-					it.Content = body
-				}
 				if cmd.Flags().Changed("owner") {
 					ownerVal := store.Owner(owner)
 					if !store.ValidOwner(ownerVal) {
@@ -233,21 +297,31 @@ func itemUpdateCmd() *cobra.Command {
 					}
 					it.Owner = ownerVal
 				}
-				if cmd.Flags().Changed("inputs") {
-					data, err := os.ReadFile(inputsPath)
+				if cmd.Flags().Changed("blocks") {
+					blocks, err := readBlocksArg(blocksPath)
 					if err != nil {
 						return err
 					}
-					var inputs []store.Input
-					if err := yaml.Unmarshal(data, &inputs); err != nil {
-						return err
-					}
-					for _, in := range inputs {
-						if !validInputType(in.Type) {
-							return fmt.Errorf("invalid input type %q on field %q", in.Type, in.Name)
+					it.Blocks = blocks
+					it.Content = ""
+					it.Inputs = nil
+				} else {
+					if cmd.Flags().Changed("content") {
+						body, err := readContentArg(content)
+						if err != nil {
+							return err
 						}
+						it.Content = body
+						it.Blocks = nil
 					}
-					it.Inputs = inputs
+					if cmd.Flags().Changed("inputs") {
+						inputs, err := readInputsArg(inputsPath)
+						if err != nil {
+							return err
+						}
+						it.Inputs = inputs
+						it.Blocks = nil
+					}
 				}
 				it.UpdatedAt = time.Now().UTC()
 				return nil
@@ -259,9 +333,10 @@ func itemUpdateCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&title, "title", "", "new title")
-	cmd.Flags().StringVar(&content, "content", "", "new markdown body (@file or @-)")
+	cmd.Flags().StringVar(&content, "content", "", "new markdown body (@file or @-); switches item to legacy format")
 	cmd.Flags().StringVar(&owner, "owner", "", "human | agent")
-	cmd.Flags().StringVar(&inputsPath, "inputs", "", "replace inputs from YAML file")
+	cmd.Flags().StringVar(&inputsPath, "inputs", "", "replace inputs from YAML file; switches item to legacy format")
+	cmd.Flags().StringVar(&blocksPath, "blocks", "", "replace full block sequence from YAML file")
 	return cmd
 }
 

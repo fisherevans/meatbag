@@ -138,25 +138,50 @@ export function Popout() {
         </div>
         <h2 className="popout-item-title">{item.title}</h2>
         {item.note && <div className="popout-item-note">{item.note}</div>}
-        {item.content_html && (
-          <div
-            className="markdown popout-markdown"
-            dangerouslySetInnerHTML={{ __html: item.content_html }}
-          />
-        )}
-        {item.inputs && item.inputs.length > 0 && (
-          <div className="inputs">
-            {item.inputs.map(schema => (
-              <InputField
-                key={schema.name}
-                slug={list.slug}
-                itemID={item.id}
-                schema={schema}
-                value={item.input_values?.[schema.name]}
-                onChange={refresh}
-              />
-            ))}
+        {item.blocks && item.blocks.length > 0 ? (
+          <div className="blocks">
+            {item.blocks.map((block, i) =>
+              block.type === "text" ? (
+                <div
+                  key={i}
+                  className="markdown popout-markdown"
+                  dangerouslySetInnerHTML={{ __html: block.content_html ?? "" }}
+                />
+              ) : block.input ? (
+                <InputField
+                  key={block.input.name}
+                  slug={list.slug}
+                  itemID={item.id}
+                  schema={block.input}
+                  value={item.input_values?.[block.input.name]}
+                  onChange={refresh}
+                />
+              ) : null
+            )}
           </div>
+        ) : (
+          <>
+            {item.content_html && (
+              <div
+                className="markdown popout-markdown"
+                dangerouslySetInnerHTML={{ __html: item.content_html }}
+              />
+            )}
+            {item.inputs && item.inputs.length > 0 && (
+              <div className="inputs">
+                {item.inputs.map(schema => (
+                  <InputField
+                    key={schema.name}
+                    slug={list.slug}
+                    itemID={item.id}
+                    schema={schema}
+                    value={item.input_values?.[schema.name]}
+                    onChange={refresh}
+                  />
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
 

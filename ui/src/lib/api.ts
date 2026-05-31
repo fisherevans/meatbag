@@ -34,6 +34,12 @@ export interface InputValue {
   has_value: boolean;
 }
 
+export interface Block {
+  type: "text" | "input";
+  content_html?: string;   // type=text
+  input?: InputSchema;     // type=input
+}
+
 export interface Item {
   id: string;
   label: string;
@@ -45,6 +51,7 @@ export interface Item {
   inputs?: InputSchema[];
   input_values?: Record<string, InputValue>;
   note?: string;
+  blocks?: Block[];
   children?: Item[];
 }
 

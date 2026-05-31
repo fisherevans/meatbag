@@ -48,6 +48,16 @@ const (
 	ListArchived ListStatus = "archived"
 )
 
+// Block is one entry in an item's content sequence. Items authored with the
+// blocks format interleave text and input blocks; the server synthesizes an
+// equivalent blocks list for legacy items (content + inputs) so the API always
+// returns the same shape regardless of which format the YAML uses.
+type Block struct {
+	Type    string  `yaml:"type" json:"type"`                       // "text" | "input"
+	Content string  `yaml:"content,omitempty" json:"content,omitempty"` // type=text: raw markdown
+	Input   *Input  `yaml:"input,omitempty" json:"input,omitempty"`     // type=input: field schema
+}
+
 // Input describes a single structured input field on an item.
 type Input struct {
 	Name        string   `yaml:"name" json:"name"`
@@ -77,8 +87,16 @@ type Item struct {
 	Title       string                `yaml:"title" json:"title"`
 	Owner       Owner                 `yaml:"owner" json:"owner"`
 	State       State                 `yaml:"state" json:"state"`
-	Content     string                `yaml:"content,omitempty" json:"content,omitempty"`
-	Inputs      []Input               `yaml:"inputs,omitempty" json:"inputs,omitempty"`
+	// Legacy body fields. Present on items created before the blocks format.
+	// The server synthesizes blocks from these on the fly so the API shape is
+	// consistent; new items use Blocks instead.
+	Content string  `yaml:"content,omitempty" json:"content,omitempty"`
+	Inputs  []Input `yaml:"inputs,omitempty" json:"inputs,omitempty"`
+
+	// Blocks replaces Content+Inputs when present. Mutually exclusive with
+	// both: when Blocks is non-empty the legacy fields are ignored by the
+	// server except as a zero-value sentinel.
+	Blocks []Block `yaml:"blocks,omitempty" json:"blocks,omitempty"`
 	InputValues map[string]InputValue `yaml:"input_values,omitempty" json:"input_values,omitempty"`
 	Note        string                `yaml:"note,omitempty" json:"note,omitempty"`
 	CreatedAt   time.Time             `yaml:"created_at" json:"created_at"`

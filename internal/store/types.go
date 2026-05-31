@@ -11,6 +11,7 @@ import (
 type (
 	List       = schema.Latest
 	Item       = v1.Item
+	Block      = v1.Block
 	Input      = v1.Input
 	InputValue = v1.InputValue
 	State      = v1.State

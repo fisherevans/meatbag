@@ -85,6 +85,58 @@ meatbag item add set-up-postgres-replica \
 Input types: `text`, `textarea`, `password`, `number`, `url`, `select`,
 `multiselect`, `radio`, `checkbox`, `file`, `markdown`.
 
+## Interleaved text and input blocks
+
+When a task has multiple sub-steps with inputs interspersed, use `--blocks`
+instead of `--content` + `--inputs`. The UI renders them in sequence so the
+human never has to scroll past the instructions to reach the input fields.
+
+```
+meatbag item add set-up-postgres-replica \
+  --title "Configure auth" --owner human \
+  --blocks @blocks.yaml
+```
+
+`blocks.yaml`:
+
+```yaml
+- type: text
+  content: |
+    Step 1: Open the provider dashboard and create an OAuth app.
+    Set the redirect URI to `https://your-app.com/callback`.
+
+- type: input
+  input:
+    name: client_id
+    type: text
+    label: OAuth Client ID
+    required: true
+
+- type: text
+  content: |
+    Step 2: Copy both credentials from the app settings page.
+    The secret is only shown once.
+
+- type: input
+  input:
+    name: client_secret
+    type: password
+    label: OAuth Client Secret
+    required: true
+
+- type: text
+  content: |
+    Once you submit both fields above I'll wire them into the config.
+```
+
+`--blocks` and `--content`/`--inputs` are mutually exclusive. Use `--blocks`
+when the workflow is a linear sequence; use `--content` + `--inputs` when all
+inputs logically follow the instructions as a group.
+
+`meatbag item update ... --blocks @blocks.yaml` replaces the entire block
+sequence. `--blocks` and `--content`/`--inputs` cannot be mixed on update
+either - pick one format and stay consistent for a given item.
+
 Guidelines:
 
 - Ask for the minimum needed.
