@@ -61,7 +61,7 @@ reordering even though labels change.
 |---------------|-----------------------|-----------------|
 | text          | single-line input     | inline `value`  |
 | textarea      | multi-line input      | inline `value`  |
-| password      | hidden input          | macOS Keychain via `secret_ref` |
+| password      | hidden input          | secret store via `secret_ref` (Keychain on macOS, `0600` file on Linux) |
 | number        | number input          | inline `value` (float64) |
 | url           | url input             | inline `value`  |
 | select        | dropdown              | inline `value`  |
@@ -73,8 +73,13 @@ reordering even though labels change.
 
 ## External resources
 
-- **Secrets** in Keychain. Service: `meatbag`. Account:
-  `<list-id>:<item-id>:<field>`. The label is `meatbag: <field> (<item-id>)`.
+- **Secrets** keyed by account `<list-id>:<item-id>:<field>`. Backend is
+  platform-specific (chosen at build time): on **macOS**, a generic-password
+  Keychain item under service `meatbag`, label `meatbag: <field> (<item-id>)`;
+  on **Linux/other**, a `0600` file at `$MEATBAG_HOME/secrets/<base64url(account)>`
+  (per-home, unlike the Mac's global Keychain namespace). The `keychain:` prefix
+  in `secret_ref` is kept on every platform as a namespace tag so refs parse
+  cross-platform.
 - **Blobs** at `~/.meatbag/blobs/<sha256>`. Hex-encoded sha256 of the
   payload. Dedupe is automatic.
 

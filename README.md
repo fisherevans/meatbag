@@ -14,8 +14,10 @@ no polling, no missed updates. Instructions live in the list, not in chat
 history.
 
 Everything is stored locally. List state is plain YAML under `~/.meatbag/`,
-secrets land in the macOS Keychain, and file uploads are content-addressed
-blobs on disk.
+and file uploads are content-addressed blobs on disk. Secrets land in the
+macOS Keychain on a Mac, or in `0600` files under `~/.meatbag/secrets/` on
+Linux (headless boxes have no login keychain) - the backend is chosen at
+build time.
 
 ![meatbag list view](docs/images/list-view.png)
 
